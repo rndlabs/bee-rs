@@ -124,7 +124,7 @@ impl Manifest {
                 &mut self.ls,
             )
             .await?;
-        let mut root_node = self.trie.lookup_node("/".as_bytes(), &mut self.ls).await?;
+        let root_node = self.trie.lookup_node("/".as_bytes(), &mut self.ls).await?;
         let mut type_ = root_node.node_type;
         type_ |= NT_VALUE;
         type_ &= NT_MASK ^ NT_WITH_PATH_SEPARATOR;

@@ -86,7 +86,7 @@ impl Marshal for Node {
 
         // copy the version hash to the header
         header[NODE_OBFUSCATION_KEY_SIZE..NODE_OBFUSCATION_KEY_SIZE + VERSION_HASH_SIZE]
-            .copy_from_slice(&hex::decode(&VERSION_HASH_02).unwrap()[..VERSION_HASH_SIZE]);
+            .copy_from_slice(&hex::decode(VERSION_HASH_02).unwrap()[..VERSION_HASH_SIZE]);
 
         // set the ref_bytes_size in the header
         header[NODE_OBFUSCATION_KEY_SIZE + VERSION_HASH_SIZE] =
@@ -170,7 +170,7 @@ impl Marshal for Node {
             let index = BitField::from_slice(&data[offset..offset + 32]);
             offset += 32;
 
-            for b in 0..=(u8::MAX as u8) {
+            for b in 0..=(u8::MAX) {
                 if index.get(b) {
                     let mut f = Fork::default();
 
@@ -223,7 +223,7 @@ impl Marshal for Node {
             let index = BitField::from_slice(&data[offset..offset + 32]);
 
             offset += 32;
-            for b in 0..=(u8::MAX as u8) {
+            for b in 0..=(u8::MAX) {
                 if index.get(b) {
                     let mut f = Fork::default();
 
