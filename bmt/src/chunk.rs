@@ -2,11 +2,11 @@ use crate::{keccak256, span::Span, SEGMENT_SIZE};
 
 use crate::{DEFAULT_MAX_PAYLOAD_SIZE, DEFAULT_MIN_PAYLOAD_SIZE, HASH_SIZE, SEGMENT_PAIR_SIZE};
 
-pub struct ChunkOptions {
+pub struct Options {
     pub max_payload_size: usize,
 }
 
-impl Default for ChunkOptions {
+impl Default for Options {
     fn default() -> Self {
         Self {
             max_payload_size: DEFAULT_MAX_PAYLOAD_SIZE,
@@ -14,7 +14,7 @@ impl Default for ChunkOptions {
     }
 }
 
-impl Clone for ChunkOptions {
+impl Clone for Options {
     fn clone(&self) -> Self {
         Self {
             max_payload_size: self.max_payload_size,
@@ -26,7 +26,7 @@ pub struct Chunk {
     payload: Vec<u8>,
     pub payload_length: usize,
     span: Span,
-    options: ChunkOptions,
+    options: Options,
 }
 
 impl Clone for Chunk {
@@ -44,7 +44,7 @@ impl Chunk {
     pub fn new(
         payload: &mut Vec<u8>,
         starting_span_value: Option<u64>,
-        options: ChunkOptions,
+        options: Options,
     ) -> Chunk {
         let payload_length: usize = payload.len();
 
@@ -214,7 +214,7 @@ mod tests {
     fn setup() -> Chunk {
         let mut payload: Vec<u8> = vec![1, 2, 3];
 
-        Chunk::new(&mut payload, None, ChunkOptions::default())
+        Chunk::new(&mut payload, None, Options::default())
     }
 
     #[test]
@@ -279,7 +279,7 @@ mod tests {
     fn bee_inclusion_proofs() {
         let mut payload = Vec::from(String::from("hello world").as_bytes());
 
-        let chunk = Chunk::new(&mut payload, None, ChunkOptions::default());
+        let chunk = Chunk::new(&mut payload, None, Options::default());
         let inclusion_proof_segments: Vec<String> = chunk
             .inclusion_proof(0)
             .into_iter()

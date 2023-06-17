@@ -3,7 +3,7 @@ use std::io::{BufRead, BufReader, Cursor};
 use crate::keccak256;
 
 use crate::{
-    chunk::{Chunk, ChunkOptions},
+    chunk::{Chunk, Options},
     span::Span,
     SEGMENT_SIZE,
 };
@@ -16,12 +16,12 @@ pub struct ChunkInclusionProof {
 pub struct ChunkedFile {
     payload: Vec<u8>,
     span: Span,
-    options: ChunkOptions,
+    options: Options,
     // reader: &'a mut BufReader<R>,
 }
 
 impl ChunkedFile {
-    pub fn new(payload: Vec<u8>, options: ChunkOptions) -> ChunkedFile {
+    pub fn new(payload: Vec<u8>, options: Options) -> ChunkedFile {
         let payload_length = payload.len();
 
         ChunkedFile {
@@ -53,7 +53,7 @@ impl ChunkedFile {
                         chunks.push(Chunk::new(
                             &mut chunk_payload,
                             None,
-                            ChunkOptions::default(),
+                            Options::default(),
                         ));
 
                         chunk_payload_length
@@ -298,7 +298,7 @@ impl ChunkedFile {
             let mut children_chunks: Vec<Chunk> = chunks[offset..end].to_vec();
             next_level_chunks.push(Self::create_intermediate_chunk(
                 &mut children_chunks,
-                ChunkOptions::default(),
+                Options::default(),
             ));
             offset += max_segment_count;
         }
@@ -320,7 +320,7 @@ impl ChunkedFile {
         (next_level_chunks, next_level_carrier_chunk)
     }
 
-    pub fn create_intermediate_chunk(chunks: &mut [Chunk], options: ChunkOptions) -> Chunk {
+    pub fn create_intermediate_chunk(chunks: &mut [Chunk], options: Options) -> Chunk {
         let (mut chunk_addresses, chunk_span_sum_values) = chunks
             .iter_mut()
             .map(|f| (f.address(), f.span().value()))
@@ -441,7 +441,7 @@ mod tests {
         let payload = vec![1, 2, 3];
         let comp_payload = payload.clone();
 
-        let chunked_file = ChunkedFile::new(payload, ChunkOptions::default());
+        let chunked_file = ChunkedFile::new(payload, Options::default());
 
         let mut leaf_chunks: Vec<Chunk> = chunked_file.leaf_chunks();
 
@@ -463,7 +463,7 @@ mod tests {
     fn big_file() {
         let (payload, _file_length) = setup_bos_chunk_file();
 
-        let chunked_file = ChunkedFile::new(payload, ChunkOptions::default());
+        let chunked_file = ChunkedFile::new(payload, Options::default());
 
         let mut leaf_chunks: Vec<Chunk> = chunked_file.leaf_chunks();
 
@@ -510,7 +510,7 @@ mod tests {
     fn find_bmt_position_of_payload_segment_index() {
         let (payload, file_length) = setup_carrier_chunk_file();
 
-        let chunked_file = ChunkedFile::new(payload, ChunkOptions::default());
+        let chunked_file = ChunkedFile::new(payload, Options::default());
         let mut leaf_chunks = chunked_file.leaf_chunks();
         let tree = chunked_file.bmt();
 
@@ -535,7 +535,7 @@ mod tests {
     fn should_collect_required_segments_for_inclusion_proof() {
         let (payload, file_length) = setup_carrier_chunk_file();
 
-        let chunked_file = ChunkedFile::new(payload, ChunkOptions::default());
+        let chunked_file = ChunkedFile::new(payload, Options::default());
         let file_hash = chunked_file.address();
 
         // segment to prove
@@ -578,7 +578,7 @@ mod tests {
     fn should_collect_required_segments_for_inclusion_proof_2() {
         let (payload, file_length) = setup_bos_chunk_file();
 
-        let chunked_file = ChunkedFile::new(payload, ChunkOptions::default());
+        let chunked_file = ChunkedFile::new(payload, Options::default());
         let file_hash = chunked_file.address();
 
         // segment to prove
@@ -617,7 +617,7 @@ mod tests {
         let (payload, file_length) = setup_carrier_chunk_file_2();
 
         assert_eq!(file_length, 67117056);
-        let chunked_file = ChunkedFile::new(payload, ChunkOptions::default());
+        let chunked_file = ChunkedFile::new(payload, Options::default());
         let file_hash = chunked_file.address();
         // segment to prove
         let last_segment_index = (file_length - 1) / 32;
