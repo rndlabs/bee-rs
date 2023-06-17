@@ -1,0 +1,8 @@
+[workspace]
+members = [
+    "bmt",
+    "manifest",
+    "postage",
+    "swarm-tools",
+]
+resolver = "2"
