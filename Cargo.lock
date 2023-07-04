@@ -3590,7 +3590,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "waku-bridge"
+name = "waku-swarm-relay"
 version = "0.1.0"
 dependencies = [
  "anyhow",
