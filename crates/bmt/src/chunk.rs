@@ -41,11 +41,7 @@ impl Clone for Chunk {
 }
 
 impl Chunk {
-    pub fn new(
-        payload: &mut Vec<u8>,
-        starting_span_value: Option<u64>,
-        options: Options,
-    ) -> Chunk {
+    pub fn new(payload: &mut Vec<u8>, starting_span_value: Option<u64>, options: Options) -> Chunk {
         let payload_length: usize = payload.len();
 
         let payload: Vec<u8> = match payload_length {

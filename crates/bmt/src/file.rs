@@ -50,11 +50,7 @@ impl ChunkedFile {
                             break;
                         }
 
-                        chunks.push(Chunk::new(
-                            &mut chunk_payload,
-                            None,
-                            Options::default(),
-                        ));
+                        chunks.push(Chunk::new(&mut chunk_payload, None, Options::default()));
 
                         chunk_payload_length
                     }
