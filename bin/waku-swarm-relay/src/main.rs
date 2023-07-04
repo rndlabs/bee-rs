@@ -80,7 +80,7 @@ async fn main() {
 
     info!(
         address = tracing::field::debug(wallet.address()),
-        "Starting waku-bridge"
+        "Starting waku-swarm-relay"
     );
 
     let _parent_span = tracing::info_span!("main").entered();

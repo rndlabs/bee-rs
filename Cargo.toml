@@ -4,7 +4,7 @@ members = [
     "crates/manifest",
     "crates/postage",
     "crates/logging",
-    "bin/waku-bridge",
+    "bin/waku-swarm-relay",
     "bin/swarm-tools",
     "bin/bee-rs",
 ]
