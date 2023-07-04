@@ -22,7 +22,7 @@ ethers-signers = { workspace = true }
 url = "2.3.1"
 anyhow = { workspace = true }
 thiserror = { workspace = true }
-waku = { version = "0.1.1", package = "waku-bindings" }
+waku-bindings = { git = "https://github.com/waku-org/waku-rust-bindings" }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true}
 num-traits = "0.2.15"

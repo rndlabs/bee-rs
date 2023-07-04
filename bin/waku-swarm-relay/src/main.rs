@@ -4,7 +4,7 @@ mod protocol;
 use clap::Parser;
 use ethers_signers::{LocalWallet, Signer};
 use tracing::{debug, error, info};
-use waku::{
+use waku_bindings::{
     waku_new, waku_set_event_callback, Encoding, Multiaddr, Running,
     WakuContentTopic, WakuLogLevel, WakuMessage, WakuNodeConfig, WakuNodeHandle, WakuPubSubTopic,
 };
@@ -47,7 +47,7 @@ pub fn setup_node_handle(_enrtree: String) -> Result<WakuNodeHandle<Running>, Wa
             .unwrap();
 
     let peer_id = node_handle
-        .add_peer(&peer_address, waku::ProtocolId::Relay)
+        .add_peer(&peer_address, waku_bindings::ProtocolId::Relay)
         .unwrap();
 
     node_handle
@@ -100,7 +100,7 @@ async fn main() {
 
     // Monitor for incoming requests
     waku_set_event_callback(move |signal| {
-        if let waku::Event::WakuMessage(event) = signal.event() {
+        if let waku_bindings::Event::WakuMessage(event) = signal.event() {
             let msg = event.waku_message();
             sender
                 .send(ReceivedMessage {

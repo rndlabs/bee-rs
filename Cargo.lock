@@ -3570,8 +3570,7 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 [[package]]
 name = "waku-bindings"
 version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c7a89ee47bda6b6fef5e4bd304722e35c94627bd7446870129a5c5fa6d2545fe"
+source = "git+https://github.com/waku-org/waku-rust-bindings#a4bfddece72f2633a343011bc6464c3fc9c16833"
 dependencies = [
  "aes-gcm",
  "base64 0.21.2",
@@ -3619,8 +3618,7 @@ dependencies = [
 [[package]]
 name = "waku-sys"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b86972863fbd4aba650a2908107d2659adeddef3ee6fb8c98e1b13256dfdca7"
+source = "git+https://github.com/waku-org/waku-rust-bindings#a4bfddece72f2633a343011bc6464c3fc9c16833"
 dependencies = [
  "bindgen",
 ]
