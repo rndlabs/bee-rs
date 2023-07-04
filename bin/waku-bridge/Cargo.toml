@@ -1,0 +1,29 @@
+[package]
+name = "waku-bridge"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+once_cell = { workspace = true }
+dotenv = { workspace = true }
+clap = { workspace = true }
+chrono = { workspace = true }
+hex = { workspace = true }
+prost = { workspace = true }
+rand = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
+ethers-core = { workspace = true }
+ethers-contract = { workspace = true }
+ethers-signers = { workspace = true }
+url = "2.3.1"
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+waku = { version = "0.1.1", package = "waku-bindings" }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true}
+num-traits = "0.2.15"
+logging = { path = "../../crates/logging" }
