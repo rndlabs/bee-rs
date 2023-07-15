@@ -5,6 +5,9 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[target.'cfg(not(target_arch = "wasm32"))'.bin.waku-swarm-rely]
+path = "src/main.rs"
+
 [dependencies]
 once_cell = { workspace = true }
 dotenv = { workspace = true }
