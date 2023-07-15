@@ -7,6 +7,7 @@ members = [
     "bin/waku-swarm-relay",
     "bin/swarm-tools",
     "bin/bee-rs",
+    "bin/wasm-playground",
 ]
 default-members = [
     "bin/bee-rs",
