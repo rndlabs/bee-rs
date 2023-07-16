@@ -1,7 +1,10 @@
-use std::{pin::Pin, future::Future};
+use std::{future::Future, pin::Pin};
 
 use crate::{batch::BatchId, pat::BucketSeeker};
-use ethers_core::{abi::Address, types::{Signature, H256}};
+use ethers_core::{
+    abi::Address,
+    types::{Signature, H256},
+};
 use thiserror::Error;
 use tiny_keccak::{Hasher, Keccak};
 use tracing::{debug, error, info, trace, warn};
@@ -59,14 +62,20 @@ impl Stamp {
         sig_fn: F,
     ) -> Self
     where
-        F: 'a + Fn([u8; 32]) -> Pin<Box<dyn Future<Output = Result<[u8; 65], Box<dyn std::error::Error + 'a>>>>>,
+        F: 'a
+            + Fn(
+                [u8; 32],
+            )
+                -> Pin<Box<dyn Future<Output = Result<[u8; 65], Box<dyn std::error::Error + 'a>>>>>,
     {
         Self {
             batch,
             x,
             y,
             timestamp,
-            sig: (sig_fn)(Self::digest(&chunk, batch, x, y, timestamp)).await.unwrap(),
+            sig: (sig_fn)(Self::digest(&chunk, batch, x, y, timestamp))
+                .await
+                .unwrap(),
         }
     }
 

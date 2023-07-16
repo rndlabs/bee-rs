@@ -1,11 +1,14 @@
+use serde::{Deserialize, Serialize};
 use std::{borrow::BorrowMut, future::Future, pin::Pin, result};
 use thiserror::Error;
 use tracing::{debug, error, info, trace, warn};
-use serde::{Deserialize, Serialize};
 // use serde_json::Result;
 use ethers_signers::{LocalWallet, Signer, WalletError};
 
-use crate::{batch::{Batch, BatchId, Store}, stamp::Stamp};
+use crate::{
+    batch::{Batch, BatchId, Store},
+    stamp::Stamp,
+};
 use bmt::chunk::Chunk;
 
 /// An error involving Postman Pat 📬
@@ -21,23 +24,23 @@ pub enum PatError {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct Pat {
-    batch_id: BatchId,          // the batch id
-    batch_amount: u128,         // the amount paid for the batch
+    batch_id: BatchId,  // the batch id
+    batch_amount: u128, // the amount paid for the batch
     #[serde(skip_serializing)]
-    batch_depth: u32,            // batch depth: batch size = 2^{batch_depth}
+    batch_depth: u32, // batch depth: batch size = 2^{batch_depth}
     #[serde(skip_serializing)]
-    batch_bucket_depth: u32,     // bucket depth: the depth of collision buckets uniformity
-    buckets: Vec<u32>,           // Collision buckets: counts per neighbourhoods (limited to 2^{batchDepth-bucketDepth})
-    max_bucket_depth: u32,       // the depth of the fullest bucket
+    batch_bucket_depth: u32, // bucket depth: the depth of collision buckets uniformity
+    buckets: Vec<u32>, // Collision buckets: counts per neighbourhoods (limited to 2^{batchDepth-bucketDepth})
+    max_bucket_depth: u32, // the depth of the fullest bucket
     #[serde(skip_serializing)]
     block_created: Option<u64>, // the block number when this batch was created
     #[serde(skip_serializing)]
-    immutable: bool,            // whether the batch is immutable
+    immutable: bool, // whether the batch is immutable
     #[serde(skip_serializing)]
-    expired: bool,              // whether the batch is expired
+    expired: bool, // whether the batch is expired
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
-    signer: Option<LocalWallet>,             // the signer
+    signer: Option<LocalWallet>, // the signer
 }
 
 impl Pat {
@@ -81,16 +84,13 @@ impl Pat {
         return Ok((x, (*count).into()));
     }
 
-    pub async fn stamp<'a>(
-        &'a mut self,
-        mut chunk: Chunk,
-    ) -> std::result::Result<Chunk, PatError> {
+    pub async fn stamp<'a>(&'a mut self, mut chunk: Chunk) -> std::result::Result<Chunk, PatError> {
         let (x, y) = self.inc(&chunk)?;
-    
+
         let timestamp = chrono::Utc::now().timestamp_nanos() as u64;
-    
+
         let signer = self.signer.as_ref().expect("Signer is not set");
-    
+
         let stamp = Stamp::new(
             &chunk,
             self.batch_id,
@@ -101,16 +101,16 @@ impl Pat {
                 let signer = signer.clone();
                 Box::pin(async move {
                     let result = signer.sign_message(&digest).await?;
-                    let result: [u8; 65] = result
-                        .to_vec()
-                        .as_slice()
-                        .try_into()?;
+                    let result: [u8; 65] = result.to_vec().as_slice().try_into()?;
                     Ok(result)
-                }) as Pin<Box<dyn Future<Output = Result<[u8; 65], Box<dyn std::error::Error + 'a>>>>>
+                })
+                    as Pin<
+                        Box<dyn Future<Output = Result<[u8; 65], Box<dyn std::error::Error + 'a>>>>,
+                    >
             }),
         )
         .await;
-    
+
         chunk.add_stamp(stamp.into());
         Ok(chunk)
     }
@@ -127,8 +127,14 @@ impl Pat {
         self.expired = true;
     }
 
-    pub fn rehydrate(&mut self, store: &Store, signer: LocalWallet) -> std::result::Result<(), PatError> {
-        let batch = store.get(self.batch_id).ok_or(PatError::BatchNotFound(self.batch_id))?;
+    pub fn rehydrate(
+        &mut self,
+        store: &Store,
+        signer: LocalWallet,
+    ) -> std::result::Result<(), PatError> {
+        let batch = store
+            .get(self.batch_id)
+            .ok_or(PatError::BatchNotFound(self.batch_id))?;
         self.batch_depth = batch.depth;
         self.batch_bucket_depth = batch.bucket_depth;
         self.block_created = batch.block_created;
@@ -154,7 +160,10 @@ mod tests {
     use std::{fs::File, io::Read};
 
     use bmt::chunk::Options;
-    use ethers_core::{rand::{self, Rng}, types::Address};
+    use ethers_core::{
+        rand::{self, Rng},
+        types::Address,
+    };
     use hex::ToHex;
     // extern crate test;
     use super::*;
@@ -162,15 +171,20 @@ mod tests {
 
     #[tokio::test]
     async fn can_stamp() {
-        let chunks = bmt::file::ChunkedFile::new("hello world".as_bytes().to_vec(), Options::default());
+        let chunks =
+            bmt::file::ChunkedFile::new("hello world".as_bytes().to_vec(), Options::default());
         let chunk = chunks.leaf_chunks()[0].clone();
 
-        let batch_id = hex::decode("c3387832bb1b88acbcd0ffdb65a08ef077d98c08d4bee576a72dbe3d36761369").unwrap();
+        let batch_id =
+            hex::decode("c3387832bb1b88acbcd0ffdb65a08ef077d98c08d4bee576a72dbe3d36761369")
+                .unwrap();
         // convert batch_id to [u8; 32]
         let mut batch_id_arr = [0u8; 32];
         batch_id_arr.copy_from_slice(&batch_id);
 
-        let wallet = "be52c649a4c560a1012daa572d4e81627bcce20ca14e007aef87808a7fadd3d0".parse::<LocalWallet>().unwrap();
+        let wallet = "be52c649a4c560a1012daa572d4e81627bcce20ca14e007aef87808a7fadd3d0"
+            .parse::<LocalWallet>()
+            .unwrap();
 
         // create a batch
         let batch = Batch::new(batch_id_arr, 0, None, Address::zero(), 18, 16, false);
@@ -179,6 +193,9 @@ mod tests {
         let chunk = pat.stamp(chunk).await.unwrap();
 
         println!("chunk address: {}", chunk.address().encode_hex::<String>());
-        println!("chunk stamps: {:?}", chunk.stamp().unwrap().encode_hex::<String>());
+        println!(
+            "chunk stamps: {:?}",
+            chunk.stamp().unwrap().encode_hex::<String>()
+        );
     }
 }

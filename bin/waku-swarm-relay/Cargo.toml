@@ -5,7 +5,7 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[target.'cfg(not(target_arch = "wasm32"))'.bin.waku-swarm-rely]
+[target.'cfg(not(target_arch = "wasm32"))'.bin]
 path = "src/main.rs"
 
 [dependencies]
