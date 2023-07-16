@@ -317,14 +317,18 @@ impl ChunkedFile {
     }
 
     pub fn create_intermediate_chunk(chunks: &mut [Chunk], options: Options) -> Chunk {
+        // use a fold instead of a map to avoid cloning the chunk addresses
+        let n = chunks.len();
         let (mut chunk_addresses, chunk_span_sum_values) = chunks
             .iter_mut()
             .map(|f| (f.address(), f.span().value()))
-            .reduce(|mut prev, mut curr| {
-                prev.0.append(&mut curr.0);
-                (prev.0, prev.1 + curr.1)
-            })
-            .unwrap();
+            .fold(
+                (Vec::<u8>::with_capacity(n * 32), 0),
+                |(mut prev_addresses, prev_span_sum), (curr_address, curr_span_sum)| {
+                    prev_addresses.extend(curr_address);
+                    (prev_addresses, prev_span_sum + curr_span_sum)
+                },
+            );
 
         Chunk::new(&mut chunk_addresses, Some(chunk_span_sum_values), options)
     }
@@ -392,8 +396,9 @@ mod tests {
     use std::{fs::File, io::Read};
 
     use hex::ToHex;
-
+    extern crate test;
     use super::*;
+    use test::Bencher;
 
     const EXPECTED_SPAN: [u8; 8] = [3, 0, 0, 0, 0, 0, 0, 0];
 
@@ -644,5 +649,33 @@ mod tests {
         );
         assert_eq!(test_get_file_hash(1000, &chunked_file.payload), file_hash);
         // expect(() => testGetFileHash(lastSegmentIndex + 1)).toThrowError(/^The given segment index/)
+    }
+
+    #[bench]
+    fn find_bmt_position_of_payload_segment_index_bench(b: &mut Bencher) {
+        let (payload, file_length) = setup_carrier_chunk_file();
+
+        let chunked_file = ChunkedFile::new(payload, Options::default());
+
+        b.iter(|| {
+            let mut leaf_chunks = chunked_file.leaf_chunks();
+            let tree = chunked_file.bmt();
+
+            // check whether the last chunk is not present in the BMT tree 0 level -> carrier chunk
+            assert_eq!(tree[0].len(), leaf_chunks.len() - 1);
+
+            let carrier_chunk = leaf_chunks.pop().unwrap();
+            let segment_index = (file_length - 1) / 32; // last segment index as well
+            let last_chunk_index = (file_length - 1) / 4096;
+            let segment_id_in_tree =
+                ChunkedFile::get_bmt_index_of_segment(segment_index, last_chunk_index, 4096);
+
+            assert_eq!(segment_id_in_tree.0, 1);
+            assert_eq!(segment_id_in_tree.1, 1);
+            assert_eq!(
+                tree[segment_id_in_tree.0 as usize][segment_id_in_tree.1 as usize].address(),
+                carrier_chunk.address()
+            );
+        })
     }
 }
