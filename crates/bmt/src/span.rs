@@ -1,3 +1,4 @@
+#[derive(Debug, Clone)]
 pub struct Span {
     value: u64,
 }
@@ -18,12 +19,6 @@ impl Span {
 
     pub fn to_bytes(&self) -> [u8; 8] {
         self.value.to_le_bytes()
-    }
-}
-
-impl Clone for Span {
-    fn clone(&self) -> Self {
-        Self { value: self.value }
     }
 }
 

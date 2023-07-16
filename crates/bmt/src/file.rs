@@ -50,7 +50,12 @@ impl ChunkedFile {
                             break;
                         }
 
-                        chunks.push(Chunk::new(&mut chunk_payload, None, Options::default()));
+                        chunks.push(Chunk::new(
+                            &mut chunk_payload,
+                            None,
+                            Options::default(),
+                            None,
+                        ));
 
                         chunk_payload_length
                     }
@@ -64,7 +69,7 @@ impl ChunkedFile {
         chunks
     }
 
-    pub fn address(&self) -> Vec<u8> {
+    pub fn address(&self) -> [u8; 32] {
         Self::bmt_root_chunk(&mut self.leaf_chunks()).address()
     }
 
@@ -330,7 +335,12 @@ impl ChunkedFile {
                 },
             );
 
-        Chunk::new(&mut chunk_addresses, Some(chunk_span_sum_values), options)
+        Chunk::new(
+            &mut chunk_addresses,
+            Some(chunk_span_sum_values),
+            options,
+            None,
+        )
     }
 
     pub fn pop_carrier_chunk(chunks: &mut Vec<Chunk>) -> Option<Chunk> {
@@ -452,7 +462,7 @@ mod tests {
 
         assert_eq!(
             &comp_payload,
-            &(only_chunk.payload())[0..only_chunk.span().value() as usize]
+            &(only_chunk.data())[0..only_chunk.span().value() as usize]
         );
         assert_eq!(only_chunk.span().to_bytes(), EXPECTED_SPAN);
         assert_eq!(only_chunk.span().value(), chunked_file.span.value());
@@ -483,17 +493,11 @@ mod tests {
             4096 * (4096 / SEGMENT_SIZE)
         ); // 524288
 
-        assert_eq!(
-            root_chunk.payload()[0..32],
-            second_level_first_chunk.address()
-        );
-        assert_eq!(second_level_first_chunk.payload().len(), 4096);
+        assert_eq!(root_chunk.data()[0..32], second_level_first_chunk.address());
+        assert_eq!(second_level_first_chunk.data().len(), 4096);
 
         // encapsulated address has to be the same to the corresponding children chunk's address
-        assert_eq!(
-            second_level_first_chunk.payload()[0..32],
-            tree[0][0].address()
-        );
+        assert_eq!(second_level_first_chunk.data()[0..32], tree[0][0].address());
 
         // last rootchunk data
         assert_eq!(
