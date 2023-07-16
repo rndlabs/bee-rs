@@ -1,7 +1,10 @@
+use std::fmt::{Display, Formatter};
+
 use crate::{keccak256, span::Span, SEGMENT_SIZE};
 
 use crate::{DEFAULT_MAX_PAYLOAD_SIZE, DEFAULT_MIN_PAYLOAD_SIZE, HASH_SIZE, SEGMENT_PAIR_SIZE};
 
+#[derive(Debug, Clone)]
 pub struct Options {
     pub max_payload_size: usize,
 }
@@ -14,43 +17,31 @@ impl Default for Options {
     }
 }
 
-impl Clone for Options {
-    fn clone(&self) -> Self {
-        Self {
-            max_payload_size: self.max_payload_size,
-        }
-    }
-}
-
+#[derive(Debug, Clone)]
 pub struct Chunk {
-    payload: Vec<u8>,
+    data: Vec<u8>,
     pub payload_length: usize,
     span: Span,
     options: Options,
-}
-
-impl Clone for Chunk {
-    fn clone(&self) -> Self {
-        Self {
-            payload: self.payload.clone(),
-            payload_length: self.payload_length,
-            span: self.span.clone(),
-            options: self.options.clone(),
-        }
-    }
+    stamp: Option<[u8; 113]>,
 }
 
 impl Chunk {
-    pub fn new(payload: &mut Vec<u8>, starting_span_value: Option<u64>, options: Options) -> Chunk {
-        let payload_length: usize = payload.len();
+    pub fn new(
+        data: &mut Vec<u8>,
+        starting_span_value: Option<u64>,
+        options: Options,
+        stamp: Option<[u8; 113]>,
+    ) -> Chunk {
+        let payload_length: usize = data.len();
 
-        let payload: Vec<u8> = match payload_length {
+        let data: Vec<u8> = match payload_length {
             DEFAULT_MIN_PAYLOAD_SIZE..=DEFAULT_MAX_PAYLOAD_SIZE => {
                 // resize to max payload size (zero-padding)
-                if payload.len() != options.max_payload_size {
-                    payload.resize(options.max_payload_size, 0);
+                if data.len() != options.max_payload_size {
+                    data.resize(options.max_payload_size, 0);
                 }
-                payload[..].to_vec()
+                data[..].to_vec()
             }
             _ => panic!(
                 "Payload must be a minimum of {} bytes, and a maximum of {} bytes",
@@ -59,18 +50,19 @@ impl Chunk {
         };
 
         Chunk {
-            payload,
+            data,
             payload_length,
             options,
             span: Span::new(match starting_span_value {
                 Some(value) => value,
                 None => payload_length as u64,
             }),
+            stamp,
         }
     }
 
-    pub fn payload(&self) -> &Vec<u8> {
-        &self.payload
+    pub fn data(&self) -> &Vec<u8> {
+        &self.data
     }
 
     pub fn max_payload_length(&self) -> usize {
@@ -81,15 +73,25 @@ impl Chunk {
         &self.span
     }
 
-    pub fn address(&self) -> Vec<u8> {
+    pub fn stamp(&self) -> Option<[u8; 113]> {
+        self.stamp
+    }
+
+    pub fn add_stamp(&mut self, stamp: [u8; 113]) -> &mut Chunk {
+        self.stamp = Some(stamp);
+
+        self
+    }
+
+    pub fn address(&self) -> [u8; 32] {
         let mut hash_input: Vec<u8> = self.span().to_bytes().into_iter().collect();
         hash_input.extend(&self.bmt_root_hash());
 
-        Vec::from(keccak256(hash_input))
+        keccak256(hash_input)
     }
 
     pub fn inclusion_proof(&self, mut segment_index: usize) -> Vec<Vec<u8>> {
-        let payload_length = self.payload().len();
+        let payload_length = self.data().len();
 
         if segment_index * SEGMENT_SIZE >= payload_length {
             panic!(
@@ -146,7 +148,7 @@ impl Chunk {
     }
 
     pub fn bmt(&self) -> Vec<Vec<u8>> {
-        let mut input: Vec<u8> = self.payload.to_vec();
+        let mut input: Vec<u8> = self.data.to_vec();
         let mut tree: Vec<Vec<u8>> = Vec::new();
         loop {
             tree.push(input.clone());
@@ -176,7 +178,7 @@ impl Chunk {
     }
 
     pub fn bmt_root_hash(&self) -> Vec<u8> {
-        let mut input: Vec<u8> = self.payload.to_vec();
+        let mut input: Vec<u8> = self.data.to_vec();
         loop {
             let num_pairs = input.len() / SEGMENT_PAIR_SIZE;
             let mut output: Vec<u8> = Vec::<u8>::with_capacity(num_pairs);
@@ -199,6 +201,12 @@ impl Chunk {
     }
 }
 
+impl Display for Chunk {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Chunk address {}", hex::encode(self.address()))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use hex::ToHex;
@@ -210,7 +218,7 @@ mod tests {
     fn setup() -> Chunk {
         let mut payload: Vec<u8> = vec![1, 2, 3];
 
-        Chunk::new(&mut payload, None, Options::default())
+        Chunk::new(&mut payload, None, Options::default(), None)
     }
 
     #[test]
@@ -248,7 +256,7 @@ mod tests {
             chunk
                 .root_hash_from_inclusion_proof(
                     inclusion_proof_segments,
-                    chunk.payload()[idx..idx + SEGMENT_SIZE].to_vec(),
+                    chunk.data()[idx..idx + SEGMENT_SIZE].to_vec(),
                     segment_index,
                 )
                 .to_vec()
@@ -275,7 +283,7 @@ mod tests {
     fn bee_inclusion_proofs() {
         let mut payload = Vec::from(String::from("hello world").as_bytes());
 
-        let chunk = Chunk::new(&mut payload, None, Options::default());
+        let chunk = Chunk::new(&mut payload, None, Options::default(), None);
         let inclusion_proof_segments: Vec<String> = chunk
             .inclusion_proof(0)
             .into_iter()
