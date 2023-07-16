@@ -1,8 +1,8 @@
 use ethers_core::types::{Address, U256};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use thiserror::Error;
-use serde::{Deserialize, Serialize};
 use tracing::{debug, error, info, trace, warn};
 
 use crate::stamp::{MarshalledStamp, Stamp, StampError, StampValidator, ValidateStamp};
@@ -16,8 +16,8 @@ pub(crate) struct Batch {
     value: u128,                    // normalised balance of the batch
     pub block_created: Option<u64>, // block number the batch was created
     pub owner: Address,             // owner of the batch
-    pub depth: u32,                  // depth of the batch
-    pub bucket_depth: u32,           // depth of the bucket
+    pub depth: u32,                 // depth of the batch
+    pub bucket_depth: u32,          // depth of the bucket
     pub immutable: bool,            // whether the batch is immutable
 }
 

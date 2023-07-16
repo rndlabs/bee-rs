@@ -5,8 +5,8 @@ use clap::Parser;
 use ethers_signers::{LocalWallet, Signer};
 use tracing::{debug, error, info};
 use waku_bindings::{
-    waku_new, waku_set_event_callback, Encoding, Multiaddr, Running,
-    WakuContentTopic, WakuLogLevel, WakuMessage, WakuNodeConfig, WakuNodeHandle, WakuPubSubTopic,
+    waku_new, waku_set_event_callback, Encoding, Multiaddr, Running, WakuContentTopic,
+    WakuLogLevel, WakuMessage, WakuNodeConfig, WakuNodeHandle, WakuPubSubTopic,
 };
 
 use std::sync::Arc;
