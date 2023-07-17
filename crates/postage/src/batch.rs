@@ -11,11 +11,11 @@ use bmt::chunk::Chunk;
 pub type BatchId = [u8; 32];
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub(crate) struct Batch {
+pub struct Batch {
     pub id: BatchId,                // the batch id
     value: u128,                    // normalised balance of the batch
     pub block_created: Option<u64>, // block number the batch was created
-    pub owner: Address,             // owner of the batch
+    pub(crate) owner: Address,             // owner of the batch
     pub depth: u32,                 // depth of the batch
     pub bucket_depth: u32,          // depth of the bucket
     pub immutable: bool,            // whether the batch is immutable
