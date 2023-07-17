@@ -85,10 +85,10 @@ impl Pat {
         return Ok((x, idx));
     }
 
-    pub async fn stamp<'a>(&'a mut self, mut chunk: Chunk) -> std::result::Result<Chunk, PatError> {
+    pub async fn stamp<'a>(&'a mut self, mut chunk: Chunk, timestamp: Option<u64>) -> std::result::Result<Chunk, PatError> {
         let (x, y) = self.inc(&chunk)?;
 
-        let timestamp = chrono::Utc::now().timestamp_nanos() as u64;
+        let timestamp = timestamp.unwrap_or_else(|| chrono::Utc::now().timestamp_nanos() as u64);
 
         let signer = self.signer.as_ref().expect("Signer is not set");
 
