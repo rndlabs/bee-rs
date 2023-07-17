@@ -23,7 +23,7 @@ pub enum PatError {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub(crate) struct Pat {
+pub struct Pat {
     batch_id: BatchId,  // the batch id
     batch_amount: u128, // the amount paid for the batch
     #[serde(skip_serializing)]
@@ -44,7 +44,7 @@ pub(crate) struct Pat {
 }
 
 impl Pat {
-    fn new(batch: &Batch, batch_amount: u128, expired: bool, signer: LocalWallet) -> Self {
+    pub fn new(batch: &Batch, batch_amount: u128, expired: bool, signer: LocalWallet) -> Self {
         Self {
             batch_id: batch.id,
             batch_amount,
@@ -131,7 +131,7 @@ impl Pat {
         self.expired = true;
     }
 
-    pub fn rehydrate(
+    pub(crate) fn rehydrate(
         &mut self,
         store: &Store,
         signer: LocalWallet,

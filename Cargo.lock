@@ -3752,11 +3752,17 @@ version = "0.1.0"
 dependencies = [
  "bmt",
  "console_error_panic_hook",
+ "ethers-signers",
  "hex",
+ "postage",
+ "rand",
+ "serde",
+ "serde_json",
  "tracing",
  "tracing-subscriber",
  "tracing-wasm",
  "wasm-bindgen",
+ "wasm-bindgen-futures",
  "web-sys",
 ]
 
