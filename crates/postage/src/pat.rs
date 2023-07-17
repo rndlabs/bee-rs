@@ -67,22 +67,25 @@ impl Pat {
         let idx = *count;
 
         // check if the bucket is full
-        if (*count as u32) == upper_bound {
-            // check if immutable
-            if self.immutable {
-                return Err(PatError::BucketFull());
+        match *count as u32 == upper_bound {
+            true => {
+                // check if immutable
+                if self.immutable {
+                    return Err(PatError::BucketFull());
+                }
+
+                *count = 0;
             }
-
-            *count = 0;
+            false => {
+                // increment the bucket
+                *count += 1;
+                if *count > self.max_bucket_depth {
+                    self.max_bucket_depth = *count;
+                }
+            }
         }
 
-        // increment the bucket
-        *count += 1;
-        if *count > self.max_bucket_depth {
-            self.max_bucket_depth = *count;
-        }
-
-        return Ok((x, idx));
+        Ok((x, idx))
     }
 
     pub async fn stamp<'a>(&'a mut self, mut chunk: Chunk, timestamp: Option<u64>) -> std::result::Result<Chunk, PatError> {
