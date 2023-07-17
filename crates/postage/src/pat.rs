@@ -64,6 +64,7 @@ impl Pat {
         let x = chunk.get_x(self.batch_bucket_depth);
         let upper_bound = self.bucket_upper_bound();
         let count = self.buckets[x as usize].borrow_mut();
+        let idx = *count;
 
         // check if the bucket is full
         if (*count as u32) == upper_bound {
@@ -81,7 +82,7 @@ impl Pat {
             self.max_bucket_depth = *count;
         }
 
-        return Ok((x, (*count).into()));
+        return Ok((x, idx));
     }
 
     pub async fn stamp<'a>(&'a mut self, mut chunk: Chunk) -> std::result::Result<Chunk, PatError> {
