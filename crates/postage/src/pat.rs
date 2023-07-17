@@ -158,32 +158,34 @@ impl BucketSeeker for Chunk {
 
 #[cfg(test)]
 mod tests {
-    use std::{fs::File, io::Read};
-
-    use bmt::chunk::Options;
-    use ethers_core::{
-        rand::{self, Rng},
-        types::Address,
-    };
+    use ethers_core::types::Address;
     use hex::ToHex;
-    // extern crate test;
+
     use super::*;
-    // use test::Bencher;
+    use bmt::chunk::Options;
+
+    static BATCH_ID: &str = "c3387832bb1b88acbcd0ffdb65a08ef077d98c08d4bee576a72dbe3d36761369";
+    static STAMP_MARSHALLED: &str = "c3387832bb1b88acbcd0ffdb65a08ef077d98c08d4bee576a72dbe3d367613690000cbe5000000000000018921ff0dbb29169df9e6364e26c6ca6b17745c10b9d6a36ea38e204f2e3cc64a8373c0661f5bb0a347c61d8d1689b0dcf8354117686a6a18d08cff927f526de5fc61b2b7491b";
+    static PAYLOAD: &str = "hello wordl";
+    static PRIVATE_KEY: &str = "be52c649a4c560a1012daa572d4e81627bcce20ca14e007aef87808a7fadd3d0";
+    static TIMESTAMP: u64 = 1688492510651;
 
     #[tokio::test]
-    async fn can_stamp() {
+    async fn valid_stamp() {
         let chunks =
-            bmt::file::ChunkedFile::new("hello world".as_bytes().to_vec(), Options::default());
+            bmt::file::ChunkedFile::new(PAYLOAD.to_owned().into(), Options::default());
         let chunk = chunks.leaf_chunks()[0].clone();
 
+        // convert BATCH_ID to String with type annotations on into()
         let batch_id =
-            hex::decode("c3387832bb1b88acbcd0ffdb65a08ef077d98c08d4bee576a72dbe3d36761369")
+            hex::decode::<String>(BATCH_ID.to_owned().into())
                 .unwrap();
+
         // convert batch_id to [u8; 32]
         let mut batch_id_arr = [0u8; 32];
         batch_id_arr.copy_from_slice(&batch_id);
 
-        let wallet = "be52c649a4c560a1012daa572d4e81627bcce20ca14e007aef87808a7fadd3d0"
+        let wallet = PRIVATE_KEY
             .parse::<LocalWallet>()
             .unwrap();
 
@@ -191,12 +193,14 @@ mod tests {
         let batch = Batch::new(batch_id_arr, 0, None, Address::zero(), 18, 16, false);
         let mut pat = Pat::new(&batch, 0, false, wallet);
 
-        let chunk = pat.stamp(chunk).await.unwrap();
+        let chunk = pat.stamp(chunk, Some(TIMESTAMP)).await.unwrap();
 
         println!("chunk address: {}", chunk.address().encode_hex::<String>());
         println!(
             "chunk stamps: {:?}",
             chunk.stamp().unwrap().encode_hex::<String>()
         );
+
+        assert_eq!(chunk.stamp().unwrap().encode_hex::<String>(), STAMP_MARSHALLED.to_owned());
     }
 }
