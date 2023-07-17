@@ -195,12 +195,6 @@ mod tests {
 
         let chunk = pat.stamp(chunk, Some(TIMESTAMP)).await.unwrap();
 
-        println!("chunk address: {}", chunk.address().encode_hex::<String>());
-        println!(
-            "chunk stamps: {:?}",
-            chunk.stamp().unwrap().encode_hex::<String>()
-        );
-
         assert_eq!(chunk.stamp().unwrap().encode_hex::<String>(), STAMP_MARSHALLED.to_owned());
     }
 }
