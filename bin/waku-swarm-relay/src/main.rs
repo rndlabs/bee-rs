@@ -1,12 +1,13 @@
 mod arguments;
 mod protocol;
 
+use arguments::Arguments;
 use clap::Parser;
 use ethers_signers::{LocalWallet, Signer};
 use tracing::{debug, error, info};
 use waku_bindings::{
-    waku_new, waku_set_event_callback, Encoding, Multiaddr, Running, WakuContentTopic,
-    WakuLogLevel, WakuMessage, WakuNodeConfig, WakuNodeHandle, WakuPubSubTopic,
+    waku_new, waku_set_event_callback, Encoding, Running, WakuContentTopic, WakuLogLevel,
+    WakuMessage, WakuNodeConfig, WakuNodeHandle, WakuPubSubTopic,
 };
 
 use std::sync::Arc;
@@ -25,14 +26,15 @@ struct App {
 pub static ENRTREE: &str =
     "enrtree://AOGECG2SPND25EEFMAJ5WF3KSGJNSGV356DSTL2YVLLZWIV6SAYBM@prod.nodes.status.im";
 // set to default-waku for prod
-pub static PUBSUB: &str = "dev-waku";
+pub static PUBSUB: &str = "default-waku";
 
 /// Setup a waku node and connect to the waku fleet
-pub fn setup_node_handle(_enrtree: String) -> Result<WakuNodeHandle<Running>, WakuHandlingError> {
+pub fn setup_node_handle(args: &Arguments) -> Result<WakuNodeHandle<Running>, WakuHandlingError> {
     let node_config = WakuNodeConfig {
         discv5: Some(true),
         relay_topics: vec![WakuPubSubTopic::new(PUBSUB, Encoding::Proto)],
         log_level: Some(WakuLogLevel::Info),
+        port: Some(0),
         ..Default::default()
     };
 
@@ -41,18 +43,16 @@ pub fn setup_node_handle(_enrtree: String) -> Result<WakuNodeHandle<Running>, Wa
         .start()
         .map_err(WakuHandlingError::CreateNodeError)?;
 
-    let peer_address: Multiaddr =
-        "/ip4/127.0.0.1/tcp/8000/ws/p2p/16Uiu2HAmPNcgHTD1Au6avQSVemez62ApCxVrDVmEvCgCEXkx4J6D"
-            .parse()
+    // Iterate through the list of peers and add them to the node
+    for peer in &args.peer {
+        let peer_id = node_handle
+            .add_peer(peer, waku_bindings::ProtocolId::Relay)
             .unwrap();
 
-    let peer_id = node_handle
-        .add_peer(&peer_address, waku_bindings::ProtocolId::Relay)
-        .unwrap();
-
-    node_handle
-        .connect_peer_with_id(&peer_id, Some(Duration::from_secs(1)))
-        .unwrap();
+        node_handle
+            .connect_peer_with_id(&peer_id, Some(Duration::from_secs(1)))
+            .unwrap();
+    }
 
     info!(
         id = tracing::field::debug(node_handle.peer_id()),
@@ -87,7 +87,7 @@ async fn main() {
 
     // Create an app instance
     let app = Arc::new(App {
-        node_handle: setup_node_handle(ENRTREE.to_string()).expect("Unable to parse enrtree"),
+        node_handle: setup_node_handle(&args).expect("Failed to setup node handle"),
     });
 
     let _ping_topic: WakuContentTopic = "/swarm-waku/1/ping/proto".parse().unwrap();
