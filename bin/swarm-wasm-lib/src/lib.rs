@@ -23,7 +23,7 @@ pub mod bmt {
     // Asynchronously evaluate the JavaScript Promise
     async fn await_promise(promise: Promise) -> Result<JsValue, JsValue> {
         let future = wasm_bindgen_futures::JsFuture::from(promise);
-        future.await.map_err(|err| err.into())
+        future.await.map_err(|err| err)
     }
 
     // Given a function that can be used to retrieve a raw chunk, return a ChunkInfo struct
@@ -59,7 +59,7 @@ pub mod bmt {
         let chunk = Chunk::new(&mut data, Some(span), Options::default(), None);
 
         ChunkInfo {
-            address: hex::encode(chunk.address().to_vec()),
+            address: hex::encode(chunk.address()),
             span,
             data: Uint8Array::from(data.as_slice()),
         }

@@ -3,11 +3,11 @@ use std::{future::Future, pin::Pin};
 use crate::{batch::BatchId, pat::BucketSeeker};
 use ethers_core::{
     abi::Address,
-    types::{Signature, H256},
+    types::Signature,
 };
 use thiserror::Error;
 use tiny_keccak::{Hasher, Keccak};
-use tracing::{debug, error, info, trace, warn};
+use tracing::error;
 
 use bmt::chunk::Chunk;
 
@@ -19,7 +19,7 @@ pub type ValidateStamp<'a> =
 pub type MarshalledStamp = [u8; 113];
 
 pub trait StampValidator {
-    fn validate_stamp<'a>(&'a self) -> ValidateStamp<'a>;
+    fn validate_stamp(&self) -> ValidateStamp<'_>;
 }
 
 /// An error involving a stamp
@@ -73,7 +73,7 @@ impl Stamp {
             x,
             y,
             timestamp,
-            sig: (sig_fn)(Self::digest(&chunk, batch, x, y, timestamp))
+            sig: (sig_fn)(Self::digest(chunk, batch, x, y, timestamp))
                 .await
                 .unwrap(),
         }
@@ -83,7 +83,7 @@ impl Stamp {
     /// This is equal to H(chunkAddr || batchId || sillyIndex || timestamp)
     pub fn digest(chunk: &Chunk, batch: BatchId, x: u32, y: u32, timestamp: u64) -> BatchId {
         let mut hasher = Keccak::v256();
-        hasher.update(&chunk.address().as_slice());
+        hasher.update(chunk.address().as_slice());
         hasher.update(&batch);
         hasher.update(&Self::silly_index(x, y).to_be_bytes());
         hasher.update(&timestamp.to_be_bytes());
@@ -143,7 +143,7 @@ impl From<Stamp> for MarshalledStamp {
         bytes[32..36].copy_from_slice(&stamp.x.to_be_bytes());
         bytes[36..40].copy_from_slice(&stamp.y.to_be_bytes());
         bytes[40..48].copy_from_slice(&stamp.timestamp.to_be_bytes());
-        bytes[48..113].copy_from_slice(&stamp.sig.to_vec().as_slice());
+        bytes[48..113].copy_from_slice(stamp.sig.to_vec().as_slice());
         bytes
     }
 }
@@ -174,7 +174,7 @@ impl From<Stamp> for Vec<u8> {
         bytes.extend_from_slice(&stamp.x.to_be_bytes());
         bytes.extend_from_slice(&stamp.y.to_be_bytes());
         bytes.extend_from_slice(&stamp.timestamp.to_be_bytes());
-        bytes.extend_from_slice(&stamp.sig.to_vec().as_slice());
+        bytes.extend_from_slice(stamp.sig.to_vec().as_slice());
         bytes
     }
 }
@@ -193,7 +193,7 @@ impl From<Vec<u8>> for Stamp {
             x,
             y,
             timestamp,
-            sig: sig.try_into().unwrap(),
+            sig,
         }
     }
 }

@@ -1,9 +1,9 @@
-use ethers_core::types::{Address, U256};
+use ethers_core::types::Address;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use thiserror::Error;
-use tracing::{debug, error, info, trace, warn};
+use tracing::error;
 
 use crate::stamp::{MarshalledStamp, Stamp, StampError, StampValidator, ValidateStamp};
 use bmt::chunk::Chunk;

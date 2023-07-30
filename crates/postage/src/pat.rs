@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
-use std::{borrow::BorrowMut, future::Future, pin::Pin, result};
+use std::{borrow::BorrowMut, future::Future, pin::Pin};
 use thiserror::Error;
-use tracing::{debug, error, info, trace, warn};
+use tracing::error;
 // use serde_json::Result;
-use ethers_signers::{LocalWallet, Signer, WalletError};
+use ethers_signers::{LocalWallet, Signer};
 
 use crate::{
     batch::{Batch, BatchId, Store},
@@ -67,7 +67,7 @@ impl Pat {
         let idx = *count;
 
         // check if the bucket is full
-        match *count as u32 == upper_bound {
+        match *count == upper_bound {
             true => {
                 // check if immutable
                 if self.immutable {
@@ -108,7 +108,7 @@ impl Pat {
             Box::new(move |digest| {
                 let signer = signer.clone();
                 Box::pin(async move {
-                    let result = signer.sign_message(&digest).await?;
+                    let result = signer.sign_message(digest).await?;
                     let result: [u8; 65] = result.to_vec().as_slice().try_into()?;
                     Ok(result)
                 })
@@ -124,7 +124,7 @@ impl Pat {
     }
 
     pub fn utilization(&self) -> u32 {
-        self.max_bucket_depth as u32
+        self.max_bucket_depth
     }
 
     pub fn bucket_upper_bound(&self) -> u32 {
@@ -159,7 +159,8 @@ impl BucketSeeker for Chunk {
     fn get_x(&self, bucket_depth: u32) -> u32 {
         // let i be t interpreted as a big endian integer
         let i = u32::from_be_bytes(self.address()[0..4].to_vec().try_into().unwrap());
-        return i >> (32 - bucket_depth);
+
+        i >> (32 - bucket_depth)
     }
 }
 
