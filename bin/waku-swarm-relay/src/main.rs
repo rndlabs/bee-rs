@@ -31,6 +31,7 @@ pub static PUBSUB: &str = "default-waku";
 
 /// Setup a waku node and connect to the waku fleet
 pub fn setup_node_handle(args: &Arguments) -> Result<WakuNodeHandle<Running>, WakuHandlingError> {
+    // Base node configuration
     let node_config = WakuNodeConfig {
         discv5: Some(true),
         relay_topics: vec![WakuPubSubTopic::new(PUBSUB, Encoding::Proto)],
@@ -39,6 +40,7 @@ pub fn setup_node_handle(args: &Arguments) -> Result<WakuNodeHandle<Running>, Wa
         ..Default::default()
     };
 
+    // Create the node
     let node_handle = waku_new(Some(node_config))
         .map_err(WakuHandlingError::CreateNodeError)?
         .start()
@@ -65,12 +67,14 @@ pub fn setup_node_handle(args: &Arguments) -> Result<WakuNodeHandle<Running>, Wa
 
 #[tokio::main]
 async fn main() {
+    // Parse the arguments and initialise logging
     let args = crate::arguments::Arguments::parse();
     logging::initialize(
         args.logging.log_filter.as_str(),
         args.logging.log_stderr_threshold,
     );
 
+    // Create a wallet from the private key used for signing messages
     let wallet = args.private_key.parse::<LocalWallet>().unwrap();
 
     info!(
@@ -85,7 +89,7 @@ async fn main() {
         node_handle: setup_node_handle(&args).expect("Failed to setup node handle"),
     });
 
-    let _ping_topic: WakuContentTopic = "/swarm-waku/1/ping/proto".parse().unwrap();
+    let ping_topic: WakuContentTopic = "/swarm-waku/1/ping/proto".parse().unwrap();
     let pong_topic: WakuContentTopic = "/swarm-waku/1/pong/proto".parse().unwrap();
     let retrieval_request_topic: WakuContentTopic =
         "/swarm-waku/1/retrieval-request/proto".parse().unwrap();
@@ -94,19 +98,15 @@ async fn main() {
 
     let pubsub_topic = WakuPubSubTopic::new(PUBSUB, Encoding::Proto);
 
-    // use an unbounded channel to send requests to the main loop
+    // Use an unbounded channel for sending requests to the main loop
     let (sender, mut receiver) = tokio::sync::mpsc::unbounded_channel();
 
-    // Monitor for incoming requests
+    // Set the waku bindings event callback
     waku_set_event_callback(move |signal| {
         if let waku_bindings::Event::WakuMessage(event) = signal.event() {
             let msg = event.waku_message();
-            sender
-                .send(ReceivedMessage {
-                    payload: msg.payload().to_vec(),
-                    content_topic: msg.content_topic().clone(),
-                })
-                .unwrap();
+            // TODO: optimize by removing clone
+            sender.send(msg.clone()).unwrap();
             debug!("Received message");
             return;
         }
@@ -122,23 +122,26 @@ async fn main() {
     while let Some(msg) = receiver.recv().await {
         debug!("Received message: {:?}", msg);
 
-        if msg.content_topic.application_name != "swarm-waku" {
+        // Skip any messages whose application name is not "swarm-waku"
+        if msg.content_topic().application_name != "swarm-waku" {
             continue;
         }
 
-        match msg.content_topic.content_topic_name.to_string().as_str() {
+        match msg.content_topic().content_topic_name.to_string().as_str() {
             "ping" => {
                 debug!(
-                    ping = tracing::field::debug(msg.payload.clone()),
+                    ping = tracing::field::debug(msg.payload().clone()),
                     "Received ping"
                 );
-                let ping: Ping = match prost::Message::decode(msg.payload.as_slice()) {
+                let ping: Ping = match prost::Message::decode(msg.payload()) {
                     Ok(ping) => ping,
                     Err(e) => {
                         error!("Failed to decode ping: {}", e);
                         continue;
                     }
                 };
+
+                // craft the pong reply
                 let pong = Pong {
                     timestamp: ping.timestamp,
                     address: wallet.address().as_bytes().to_vec(),
@@ -155,11 +158,11 @@ async fn main() {
                             vec![],
                             true,
                         );
-                        let _msg_id = app
+                        let msg_id = app
                             .node_handle
                             .relay_publish_message(&waku_message, Some(pubsub_topic.clone()), None)
                             .unwrap();
-                        debug!("Published pong: {:?}", waku_message);
+                        debug!("Published pong: {:?} msg_id: {:?}", waku_message, msg_id);
                     }
                     Err(e) => {
                         error!("Failed to encode pong: {}", e);
