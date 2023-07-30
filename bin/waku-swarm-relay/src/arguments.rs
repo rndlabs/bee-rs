@@ -11,6 +11,8 @@ pub struct Arguments {
     pub peer: Vec<Multiaddr>,
     #[clap(long, help = "enrtree")]
     pub enrtree: Option<String>,
+    #[clap(long, help = "bee API url", default_value = "http://localhost:1633")]
+    pub bee_api_url: String,
 }
 
 // Write a parser to make sure that the private_key is a valid ethereum private key
