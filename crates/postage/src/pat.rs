@@ -88,7 +88,11 @@ impl Pat {
         Ok((x, idx))
     }
 
-    pub async fn stamp<'a>(&'a mut self, mut chunk: Chunk, timestamp: Option<u64>) -> std::result::Result<Chunk, PatError> {
+    pub async fn stamp<'a>(
+        &'a mut self,
+        mut chunk: Chunk,
+        timestamp: Option<u64>,
+    ) -> std::result::Result<Chunk, PatError> {
         let (x, y) = self.inc(&chunk)?;
 
         let timestamp = timestamp.unwrap_or_else(|| chrono::Utc::now().timestamp_nanos() as u64);
@@ -175,22 +179,17 @@ mod tests {
 
     #[tokio::test]
     async fn valid_stamp() {
-        let chunks =
-            bmt::file::ChunkedFile::new(PAYLOAD.to_owned().into(), Options::default());
+        let chunks = bmt::file::ChunkedFile::new(PAYLOAD.to_owned().into(), Options::default());
         let chunk = chunks.leaf_chunks()[0].clone();
 
         // convert BATCH_ID to String with type annotations on into()
-        let batch_id =
-            hex::decode::<String>(BATCH_ID.to_owned().into())
-                .unwrap();
+        let batch_id = hex::decode::<String>(BATCH_ID.to_owned().into()).unwrap();
 
         // convert batch_id to [u8; 32]
         let mut batch_id_arr = [0u8; 32];
         batch_id_arr.copy_from_slice(&batch_id);
 
-        let wallet = PRIVATE_KEY
-            .parse::<LocalWallet>()
-            .unwrap();
+        let wallet = PRIVATE_KEY.parse::<LocalWallet>().unwrap();
 
         // create a batch
         let batch = Batch::new(batch_id_arr, 0, None, Address::zero(), 18, 16, false);
@@ -198,6 +197,9 @@ mod tests {
 
         let chunk = pat.stamp(chunk, Some(TIMESTAMP)).await.unwrap();
 
-        assert_eq!(chunk.stamp().unwrap().encode_hex::<String>(), STAMP_MARSHALLED.to_owned());
+        assert_eq!(
+            chunk.stamp().unwrap().encode_hex::<String>(),
+            STAMP_MARSHALLED.to_owned()
+        );
     }
 }
