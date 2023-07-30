@@ -8,6 +8,7 @@ members = [
     "bin/swarm-tools",
     "bin/bee-rs",
     "bin/wasm-playground",
+    "bin/swarm-wasm-lib",
 ]
 default-members = [
     "bin/bee-rs",
@@ -63,6 +64,12 @@ tokio-util = { version = "0.7.8", features = ["codec"] }
 ## async
 async-trait = "0.1.57"
 futures = "0.3.21"
+
+## wasm
+wasm-bindgen = "0.2.87"
+wasm-bindgen-futures = "0.4.37"
+wasm-bindgen-test = "0.3.37"
+js-sys = "0.3.64"
 
 clap = { version = "4.3.0", features = ["derive", "env"] }
 chrono = "0.4.23"
